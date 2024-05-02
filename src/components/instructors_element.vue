@@ -1,51 +1,80 @@
 <template>
-    <div class="app">
+  <div class="app">
     <h1>Наши тренера</h1>
-      <div class="search-bar">
-        <input type="text" placeholder="Введите имя тренера" v-model="searchQuery">
-      </div>
-      <div class="trainers">
-        <div v-for="trainer in filteredTrainers" :key="trainer.id" class="trainer-card">
-          <img :src="trainer.photo" alt="Фото тренера" class="trainer-photo"/>
-          <div class="trainer-info">
-            <h3>{{ trainer.name }}</h3>
-            <div class="trainer-likes">
+    <div class="search-bar">
+      <input type="text" placeholder="Введите имя тренера" v-model="searchQuery">
+    </div>
+    <div class="trainers">
+      <div v-for="trainer in filteredTrainers" :key="trainer.id" class="trainer-card" @click="openModal(trainer)">
+        <img :src="trainer.photo" alt="Фото тренера" class="trainer-photo"/>
+        <div class="trainer-info">
+          <h3>{{ trainer.full_name }}</h3>
+          <div class="trainer-likes">
               <i class="material-icons">star_rate</i>
-              <span>{{ trainer.likes }}</span>
+              <span>5</span>
             </div>
-          </div>
         </div>
       </div>
     </div>
-  </template>
+
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="showModal = false">&times;</span>
+        <img :src="selectedTrainer.photo" alt="Фото тренера" class="trainer-photo"/>
+        <h3>{{ selectedTrainer.full_name }}</h3>
+        <p>Опыт работы: {{ selectedTrainer.experience }} лет</p>
+        <p>Специализация: {{ selectedTrainer.specialization }}</p>
+      </div>
+    </div>
+  </div>
+</template>
   
-  <script>
-  import { ref, computed } from 'vue';
-  
-  export default {
-    setup() {
-      const trainers = ref([
-        { id: 1, name: "Анна Винокурова", likes: 5, photo: "@/assets/photos/instr1.jpg" },
-        { id: 2, name: "Александра Луценкова", likes: 5, photo: "/images/2.jpeg" },
-        { id: 3, name: "Валерия Калентьева", likes: 5, photo: "/images/3.jpeg" },
-        { id: 4, name: "Татьяна Фролова", likes: 5, photo: "/images/4.jpeg" }
-      ]);
-  
-      const searchQuery = ref('');
-  
-      const filteredTrainers = computed(() => {
-        return trainers.value.filter(trainer =>
-          trainer.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-        );
-      });
-  
-      return {
-        searchQuery,
-        filteredTrainers
-      };
-    }
-  };
-  </script>
+<script>
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
+
+export default {
+  setup() {
+    const trainers = ref([]);
+    const showModal = ref(false);
+    const selectedTrainer = ref({});
+    const searchQuery = ref('');
+
+    const fetchTrainers = async () => {
+      const token = localStorage.getItem('client_token');
+      try {
+        const response = await axios.get('http://localhost:8080/api/treners/get-trener', {
+          headers: {'Authorization': 'Bearer ' + token}
+        });
+        trainers.value = response.data;
+      } catch (error) {
+        console.error('Ошибка при загрузке данных тренеров:', error);
+      }
+    };
+
+    onMounted(fetchTrainers);
+
+    const filteredTrainers = computed(() => {
+      return trainers.value.filter(trainer =>
+        trainer.full_name.toLowerCase().includes(searchQuery.value.toLowerCase())
+      );
+    });
+
+    const openModal = (trainer) => {
+      selectedTrainer.value = trainer;
+      showModal.value = true;
+    };
+
+    return {
+      searchQuery,
+      filteredTrainers,
+      showModal,
+      selectedTrainer,
+      openModal,
+    };
+  }
+};
+</script>
   
   <style scoped>
   .app {
@@ -91,10 +120,11 @@
     box-shadow: 0 12px 20px rgba(172, 230, 253, 0.5); /* Увеличение тени для лучшего выделения */
   }
   
-  .trainer-photo {
-    width: 100%;
-    height: auto;
-    border-radius: 10px;
+    .trainer-photo {
+    width: 100%; /* Ширина фото равна ширине карточки */
+    height: 200px; /* Высота фото */
+    object-fit: cover; /* Масштабирование фото без потери пропорций */
+    border-radius: 10px; /* Закругленные углы у фото */
   }
   
   .trainer-info {

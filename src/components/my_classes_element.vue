@@ -1,47 +1,85 @@
 <template>
-    <div class="container">
-      <header>
-        <div class="tabs">
-          <button class="tab" :class="{ active: activeTab === 'upcoming' }" @click="setActiveTab('upcoming')">Ближайшие</button>
-          <button class="tab" :class="{ active: activeTab === 'past' }" @click="setActiveTab('past')">Прошедшие</button>
-        </div>
-      </header>
-      <p class="message">{{ messageText }}</p>
-      <div></div>
+  <div class="container">
+    <header>
+      <div class="tabs">
+        <button class="tab" :class="{ active: activeTab === 'upcoming' }" @click="setActiveTab('upcoming')">Ближайшие</button>
+        <button class="tab" :class="{ active: activeTab === 'past' }" @click="setActiveTab('past')">Прошедшие</button>
+      </div>
+    </header>
+    <h1 class="message">{{ messageText }}</h1>
+    <div v-if="activeTab === 'upcoming'">
+      <div v-for="session in upcomingSessions" :key="session.id" class="card">
+        <h2>{{ session.class_name }}</h2>
+        <h3>{{ session.instructor }}</h3>
+        <h3>{{ new Date(session.date).toLocaleDateString() }}</h3>
+      </div>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        activeTab: 'upcoming',
-      };
-    },
-    computed: {
+    <div v-if="activeTab === 'past'">
+      <div v-for="session in pastSessions" :key="session.id" class="card">
+        <h2>{{ session.class_name }}</h2>
+        <h3>{{ session.instructor }}</h3>
+        <h3>{{ new Date(session.date).toLocaleDateString() }}</h3>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  data() {
+    return {
+      activeTab: 'upcoming',
+      sessions: [],
+      upcomingSessions: [],
+      pastSessions: [],
+    };
+  },
+  mounted() {
+    this.fetchSessions();
+  },
+  computed: {
       messageText() {
-        if (this.activeTab === 'past') {
-          return 'Вы еще не посещали ни одного занятия';
+        if (this.activeTab === 'upcoming') {
+          if (this.upcomingSessions.length === 0) {
+            return 'У вас ещё нет записей';
+          }
         } else {
-          return 'У вас ещё нет записей';
+          if (this.pastSessions.length === 0) {
+            return 'Вы еще не посещали ни одного занятия';
+          }
         }
-      }
+        return '';
     },
-    methods: {
-      setActiveTab(tab) {
-        this.activeTab = tab;
-      }
+  },
+  methods: {
+    setActiveTab(tab) {
+      this.activeTab = tab;
+    },
+    fetchSessions() {
+      const token = localStorage.getItem('client_token');
+      axios.get('http://localhost:8080/api/classes/get-class', {
+        headers: {'Authorization': 'Bearer ' + token}
+      })
+        .then(response => {
+          const now = new Date();
+          this.sessions = response.data;
+
+          this.pastSessions = this.sessions.filter(session => new Date(session.date) < now);
+          this.upcomingSessions = this.sessions.filter(session => new Date(session.date) >= now);
+        })
+        .catch(error => {
+          console.error('There was an error fetching the sessions:', error);
+        });
     }
-  };
-  </script>
+  }
+};
+</script>
   
   
   <style scoped>
   .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
     padding: 20px;
     text-align: center;
     background-color: #3a3b3c;
@@ -65,34 +103,35 @@
     justify-content: center;
     gap: 10px;
     margin-top: 10px;
+    margin-bottom: 50px;
   }
   
+  .card {
+    border: 3px solid #8ed8f8;
+    background-color: #4c4d4e;
+    color: rgb(236, 236, 236);
+    font-size: 18px;
+    padding: 5px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+  }
+  .tabs {
+    margin-bottom: 10px;
+  }
   .tab {
-    padding: 8px 16px;
-    background-color: #59595a;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-    font-weight: 500;
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background-color: #eee;
+    margin-right: 50px;
+    width: 500px;
   }
-  
   .tab.active {
-    background-color: #989899;
-    font-weight: 700;
+    background-color: #8ed8f8;
   }
-  
-  .content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 40%;
-  }
-  
   .message {
-    margin-bottom: 20px;
-    font-size: 30px;
-    color: #8ed8f8;
+    margin-top: 40px;
   }
-  
   .refresh-btn {
     padding: 10px 20px;
     background-color: #8ed8f8;
@@ -105,8 +144,8 @@
 
   .refresh-btn:hover {
     transform: scale(1.05);
-    background-color: #d4ebff;
-    box-shadow: 0 12px 20px rgba(172, 230, 253, 0.5);
+    margin: 300px;
   }
+
   </style>
   

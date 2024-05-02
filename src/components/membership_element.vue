@@ -1,60 +1,108 @@
 <template>
-    <div class="subscription-container">
-      <h2>По количеству посещений</h2>
-      <div v-for="item in subscriptions" :key="item.id" class="subscription-card">
-        <div class="details" :style="{background: item.gradient}">
-          <div id="top">
-            <p>{{ item.sessions }} занятий на месяц</p>
-            <div id="dur" class="duration">{{ item.duration }}</div>
-          </div>
-          <p>{{ item.visits }} посещений</p>
-          <p id="price">{{ item.price }} Р</p>
+  <div class="subscription-container">
+    <h2>Абонементы</h2>
+    <div v-for="item in subscriptions" :key="item.membership_type_id" class="subscription-card" @click="showConfirmation(item)" :style="{ background: item.gradient }">
+      <div class="details">
+        <div id="top">
+          <p>{{ item.classes_included }} занятий на месяц</p>
+          <div id="dur" class="duration">{{ item.duration }}</div>
         </div>
+        <p id="price">{{ item.membership_type_price }} Р</p>
       </div>
     </div>
-  </template>
-  
-  <script>
-  export default {
+
+    <div class="modal" v-if="showModal">
+      <div class="modal-content">
+        <p>Вы точно хотите купить абонемент «{{ selectedSubscription.membership_type_name }}»?</p>
+        <button @click="buySubscription">Да</button>
+        <button @click="closeModal">Нет</button>
+        <div v-if="purchaseError" class="error-message">
+        {{ purchaseError }}
+      </div>
+    </div>
+      </div>
+  </div>
+</template>
+
+<script>
+export default {
   name: 'SubscriptionCards',
   data() {
     return {
-      subscriptions: [
-        {
-          id: 1,
-          sessions: 4,
-          freezeDays: 7,
-          visits: 4,
-          price: 3800,
-          duration: '1 месяц',
-          gradient: 'linear-gradient(160deg, #61d9e0 0%, #66a6ff 100%)' // Светло-голубой в голубой
-        },
-        {
-          id: 2,
-          sessions: 8,
-          freezeDays: 7,
-          visits: 8,
-          price: 7200,
-          duration: '1 месяц',
-          gradient: 'linear-gradient(120deg,#66a6ff 0%, #30cfd0 100%)' // Голубой в ярко-голубой
-        },
-        {
-          id: 3,
-          sessions: 12,
-          freezeDays: 7,
-          visits: 12,
-          price: 10200,
-          duration: '1 месяц',
-          gradient: 'linear-gradient(to top, #2e2e64 0%, #30cfd0 100%)' // Сиреневый в темно-синий
-        }
-      ]
+      subscriptions: [],
+      showModal: false,
+      selectedSubscription: null,
+      purchaseError: ''
     };
+  },
+  methods: {
+    showConfirmation(subscription) {
+      this.selectedSubscription = subscription;
+      this.purchaseError = '';  // сброс предыдущих ошибок
+      this.showModal = true;
+    },
+    async buySubscription() {
+      const token = localStorage.getItem("client_token");
+      try {
+        const response = await fetch(`http://localhost:8080/api/membership/purchase`, {
+          method: "POST",
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            membership_type_id: this.selectedSubscription.membership_type_id
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          console.log('Покупка абонемента успешно совершена');
+          this.closeModal();
+        } else {
+          this.purchaseError = data.message;
+        }
+      } catch (error) {
+        console.error("Error during subscription purchase:", error);
+        this.purchaseError = 'Произошла ошибка при покупке абонемента.';
+      }
+    },
+    closeModal() {
+      this.showModal = false;
+      this.selectedSubscription = null;
+    },
+    async getSubcriptions() {
+      try {
+        const token = localStorage.getItem("client_token");
+        const response = await fetch("http://localhost:8080/api/membership-type", {
+          method: "GET",
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Network response was not ok.");
+        }
+
+        this.subscriptions = await response.json();
+      } catch (error) {
+        console.error("Problem fetching subscriptions:", error);
+      }
+    }
+  },
+  mounted() {
+    this.getSubcriptions();
   }
 };
-
-  </script>
+</script>
   
   <style>
+
+  .error-message {
+    margin-top: 30px;
+  }
+
   .subscription-container {
     font-family: 'Arial', sans-serif;
     color: #4e4d4d;
@@ -119,5 +167,40 @@
     font-weight: 700;
     font-size: 40px;
   }
+
+  h3 {
+    color: white;
+    font-size: 30px;
+    text-align: center;
+  }
+
+  .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: #59595a;
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  font-size: 20px;
+  width: 600px;
+  text-align: center;
+}
+
+.modal-content button {
+  width: 20%;
+  margin-right: 50px;
+  border-radius: 10px;
+}
   </style>
   
