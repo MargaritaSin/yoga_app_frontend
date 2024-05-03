@@ -1,4 +1,18 @@
 <template>
+  <div class="sorting-controls">
+    <select v-model="selectedInstructor" @change="filterSchedules">
+      <option value="">Выберите инструктора</option>
+      <option v-for="instructor in uniqueInstructors" :key="instructor" :value="instructor">
+        {{ instructor }}
+      </option>
+    </select>
+    <select v-model="selectedYogaType" @change="filterSchedules">
+      <option value="">Выберите тип йоги</option>
+      <option v-for="yogaType in uniqueYogaTypes" :key="yogaType" :value="yogaType">
+        {{ yogaType }}
+      </option>
+    </select>
+  </div>
   <div class="date-picker">
     <button @click="changeDate('prev')">&#8249;</button>
     <h1>{{ formattedDate }}</h1>
@@ -32,7 +46,7 @@
 
 
 <script>
-import { ref, computed } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 import axios from 'axios';
 import { addDays, subDays, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -42,9 +56,37 @@ export default {
     const currentDate = ref(new Date());
     const schedules = ref([]);
     const selectedSchedule = ref(null);
+    const selectedInstructor = ref('');
+    const selectedYogaType = ref('');
+
+    watchEffect(() => fetchSchedules());
     
     const formattedDate = computed(() => {
       return format(currentDate.value, 'PPPP', { locale: ru });
+    });
+
+    function filterSchedules() {
+      if (selectedInstructor.value || selectedYogaType.value) {
+        fetchFilteredSchedules();
+      } else {
+        fetchSchedules();
+      }
+    }
+
+    async function fetchFilteredSchedules() {
+      // Логика запроса, фильтрующего расписание по инструктору и типу йоги
+      const filtered = schedules.value.filter((schedule) => {
+        return (!selectedInstructor.value || schedule.instructor_name === selectedInstructor.value) &&
+               (!selectedYogaType.value || schedule.yoga_type === selectedYogaType.value);
+      });
+      schedules.value = filtered;
+    }
+
+    const uniqueInstructors = computed(() => {
+      return Array.from(new Set(schedules.value.map(s => s.instructor_name)));
+    });
+    const uniqueYogaTypes = computed(() => {
+      return Array.from(new Set(schedules.value.map(s => s.yoga_type)));
     });
 
     function changeDate(direction) {
@@ -54,6 +96,18 @@ export default {
         currentDate.value = subDays(currentDate.value, 1);
       }
       fetchSchedules(); 
+    }
+
+    function sortSchedules(field) {
+      this.schedules.sort((a, b) => {
+        if (a[field] < b[field]) {
+          return -1;
+        }
+        if (a[field] > b[field]) {
+          return 1;
+        }
+        return 0;
+      });
     }
 
     async function fetchSchedules() {
@@ -105,7 +159,7 @@ export default {
           }
         });
 
-        if (response.data.success) {
+        if (response.data.status === 'success') {
           console.log("Запись на занятие прошла успешно");
           // Обновить данные о расписании или какие-либо статусы представления
           alert("Вы успешно записаны на занятие!");
@@ -123,13 +177,19 @@ export default {
     fetchSchedules();
     return {
       currentDate,
+      selectedInstructor,
+      selectedYogaType,
+      uniqueInstructors,
+      uniqueYogaTypes,
+      filterSchedules,
       changeDate,
+      sortSchedules,
       schedules,
       formattedDate,
       selectedSchedule,
       selectSchedule,
       closeModal,
-      bookSchedule
+      bookSchedule,
     }
   }
 }

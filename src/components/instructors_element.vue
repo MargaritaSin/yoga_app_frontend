@@ -19,8 +19,8 @@
 
     <div v-if="showModal" class="modal">
       <div class="modal-content">
-        <span class="close" @click="showModal = false">&times;</span>
-        <img :src="selectedTrainer.photo" alt="Фото тренера" class="trainer-photo"/>
+        <span class="close" @click="showModal = false"><i class="material-icons">close</i></span>
+        <img :src="selectedTrainer.photo" alt="Фото тренера" class="trainer-photo-modal"/>
         <h3>{{ selectedTrainer.full_name }}</h3>
         <p>Опыт работы: {{ selectedTrainer.experience }} лет</p>
         <p>Специализация: {{ selectedTrainer.specialization }}</p>
@@ -78,7 +78,7 @@ export default {
   
   <style scoped>
   .app {
-    max-width: 600px;
+    max-width: 900px;
     margin: 0 auto;
     color: #fff;
     background: #333;
@@ -124,8 +124,16 @@ export default {
     width: 100%; /* Ширина фото равна ширине карточки */
     height: 200px; /* Высота фото */
     object-fit: cover; /* Масштабирование фото без потери пропорций */
+    object-position: center top;
     border-radius: 10px; /* Закругленные углы у фото */
-  }
+    }
+
+    .trainer-photo-modal {
+    width: 100%; /* Ширина фото равна ширине карточки */
+    height: 50%; /* Высота фото */
+    object-fit: cover; /* Масштабирование фото без потери пропорций */
+    border-radius: 10px; /* Закругленные углы у фото */
+    }
   
   .trainer-info {
     display: flex;
@@ -143,6 +151,15 @@ export default {
     font-size: 18px;
     display: flex;
     align-items: center;
+  }
+
+  .close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+    height: 50px;
+    width: 50px;
   }
   
   .material-icons {

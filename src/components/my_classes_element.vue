@@ -10,15 +10,15 @@
     <div v-if="activeTab === 'upcoming'">
       <div v-for="session in upcomingSessions" :key="session.id" class="card">
         <h2>{{ session.class_name }}</h2>
-        <h3>{{ session.instructor }}</h3>
-        <h3>{{ new Date(session.date).toLocaleDateString() }}</h3>
+        <h3>Преподаватель: {{ session.instructor }}</h3>
+        <h3>Дата: {{ new Date(session.date).toLocaleDateString() }}</h3>
       </div>
     </div>
     <div v-if="activeTab === 'past'">
       <div v-for="session in pastSessions" :key="session.id" class="card">
         <h2>{{ session.class_name }}</h2>
-        <h3>{{ session.instructor }}</h3>
-        <h3>{{ new Date(session.date).toLocaleDateString() }}</h3>
+        <h3>Преподаватель: {{ session.instructor }}</h3>
+        <h3>Дата: {{ new Date(session.date).toLocaleDateString() }}</h3>
       </div>
     </div>
   </div>
@@ -81,7 +81,6 @@ export default {
   <style scoped>
   .container {
     padding: 20px;
-    text-align: center;
     background-color: #3a3b3c;
     height: 90%;
     padding: 15px;
@@ -110,10 +109,19 @@ export default {
     border: 3px solid #8ed8f8;
     background-color: #4c4d4e;
     color: rgb(236, 236, 236);
-    font-size: 18px;
+    font-size: 14px;
     padding: 5px;
     margin-bottom: 10px;
     border-radius: 10px;
+    text-align: left;
+  }
+
+  .card h1,h2 {
+    font-size: 25px;
+  }
+
+  h3 {
+    font-size: 17px;
   }
   .tabs {
     margin-bottom: 10px;
